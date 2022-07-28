@@ -1,18 +1,13 @@
-ARG GOBORING=registry.suse.com/bci/golang:1.17-11.51
+ARG GOBORING=registry.suse.com/bci/golang:1.18-7.63
 FROM ${GOBORING} AS goboring
 ARG GO_VERSION=1.17.5
 ARG GOBORING_BUILD=7
 RUN zypper update -y && \
-    zypper --non-interactive addrepo https://download.opensuse.org/repositories/devel:tools:scm/openSUSE_Leap_15.4/devel:tools:scm.repo && \
+    zypper --non-interactive addrepo https://download.opensuse.org/repositories/devel:/tools:/scm/15.4/devel:tools:scm.repo && \
     zypper --gpg-auto-import-keys refresh && \
     zypper --non-interactive install \
-        bash \
-        coreutils \
         curl \
         docker \
-        file \
-        git \
-        make \
         mercurial \
         rsync \
         subversion \
@@ -37,12 +32,14 @@ RUN set -ex; \
         tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz;  \
         mv trivy /usr/bin;                             \
     fi
-RUN zypper --non-interactive addrepo https://download.opensuse.org/repositories/home:dirkmueller:musl/standard/home:dirkmueller:musl.repo && \
-    zypper --gpg-auto-import-keys refresh && \
-    zypper --non-interactive install --replacefiles \
-        musl \
-        musl-devel && \
-    zypper clean --all
+
+RUN git clone git://git.musl-libc.org/musl /usr/local/musl
+WORKDIR /usr/local/musl
+RUN ./configure
+RUN make
+RUN make install
+ENV LIBRARY_PATH=/usr/local/musl/lib
+
 RUN rm /usr/bin/go && cp /usr/local/boring/go/bin/go /usr/bin
 RUN go version
 RUN trivy --download-db-only --quiet
