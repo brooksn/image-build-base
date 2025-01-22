@@ -18,7 +18,7 @@ RUN set -ex; \
 
 FROM trivy-${TARGETARCH} as trivy-base
 
-FROM alpine:3.18
+FROM alpine:3.20
 ENV GOTOOLCHAIN=local
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
@@ -41,6 +41,10 @@ RUN apk --no-cache add \
     wget \
     yq \
     zstd
+COPY compat64.c .
+RUN cc -c -fPIC compat64.c -o compat64.o && \
+    ar rcs libcompat64.a compat64.o && \
+    mv libcompat64.a /usr/local/lib/
 COPY scripts/ /usr/local/go/bin/
 COPY --from=trivy-base /usr/local/bin/ /usr/bin/
 RUN set -x && \
