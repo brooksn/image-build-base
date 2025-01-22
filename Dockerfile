@@ -1,6 +1,10 @@
 ARG GOLANG_VERSION=1.22.4
 
 FROM --platform=$TARGETPLATFORM library/golang:${GOLANG_VERSION}-alpine AS golang
+RUN apk update && apk add bash git gcc musl-dev
+ADD --keep-git-dir=true https://github.com/golang/go.git#master /go/src/github.com/golang/go
+RUN cd /go/src/github.com/golang/go/src && ./make.bash
+RUN mv /go/src/github.com/golang/go /usr/local/go
 
 FROM alpine:3.18 as trivy-amd64
 ARG TRIVY_VERSION=0.42.0
